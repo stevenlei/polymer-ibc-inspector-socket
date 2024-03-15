@@ -1,0 +1,19 @@
+{
+  "name": "polymer-ibc-inspector",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "ethers": "^6.11.1",
+    "redis": "^4.6.13",
+    "redis-lock": "^1.0.0",
+    "socket.io": "^4.7.5"
+  }
+}
