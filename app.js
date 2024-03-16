@@ -175,9 +175,6 @@ async function main() {
 
       opPingTimeout = setTimeout(() => {
         wsProviderOp.websocket.terminate();
-
-        // pm2 will restart the process
-        process.exit(1);
       }, SOCKET_EXPECTED_PONG_BACK);
     }, SOCKET_KEEP_ALIVE_CHECK_INTERVAL);
   });
@@ -188,6 +185,9 @@ async function main() {
     );
     clearInterval(opKeepAliveInterval);
     clearTimeout(opPingTimeout);
+
+    // pm2 will restart the process
+    process.exit(1);
   });
 
   wsProviderOp.websocket.on("pong", () => {
@@ -211,9 +211,6 @@ async function main() {
 
       basePingTimeout = setTimeout(() => {
         wsProviderBase.websocket.terminate();
-
-        // pm2 will restart the process
-        process.exit(1);
       }, SOCKET_EXPECTED_PONG_BACK);
     }, SOCKET_KEEP_ALIVE_CHECK_INTERVAL);
   });
@@ -224,6 +221,9 @@ async function main() {
     );
     clearInterval(baseKeepAliveInterval);
     clearTimeout(basePingTimeout);
+
+    // pm2 will restart the process
+    process.exit(1);
   });
 
   wsProviderBase.websocket.on("pong", () => {
