@@ -129,7 +129,6 @@ async function main() {
     // send the packets
     for (const packet of parsedPackets) {
       socket.emit("packet", packet);
-      console.log(packet);
     }
   });
 
