@@ -5,6 +5,12 @@ const { Server } = require("socket.io");
 const { createClient } = require("redis");
 const redisLock = require("redis-lock");
 
+// Keep socket alive
+const SOCKET_EXPECTED_PONG_BACK = 15000;
+const SOCKET_KEEP_ALIVE_CHECK_INTERVAL = 7500;
+let socketPingTimeout = null;
+let socketKeepAliveInterval = null;
+
 let io, redis, lock;
 
 // const opDispatcherAbi = require("./abi/OP_DISPATCHER.json");
@@ -155,6 +161,78 @@ async function main() {
       processEvent("base", event);
     }
   );
+
+  // [OP] keep the socket alive
+  let opPingTimeout = null;
+  let opKeepAliveInterval = null;
+
+  wsProviderOp.websocket.on("open", () => {
+    opKeepAliveInterval = setInterval(() => {
+      console.debug(
+        `>>> [OP] Checking if the connection is alive, sending a ping.`
+      );
+
+      wsProviderOp.websocket.ping();
+
+      opPingTimeout = setTimeout(() => {
+        wsProviderOp.websocket.terminate();
+
+        // pm2 will restart the process
+        process.exit(1);
+      }, SOCKET_EXPECTED_PONG_BACK);
+    }, SOCKET_KEEP_ALIVE_CHECK_INTERVAL);
+  });
+
+  wsProviderOp.websocket.on("close", () => {
+    console.error(
+      `> [OP] The websocket connection was closed, reconnecting...`
+    );
+    clearInterval(opKeepAliveInterval);
+    clearTimeout(opPingTimeout);
+  });
+
+  wsProviderOp.websocket.on("pong", () => {
+    console.debug(
+      `> [OP] Received pong, so connection is alive, clearing the timeout.`
+    );
+    clearInterval(opPingTimeout);
+  });
+
+  // [BASE] keep the socket alive
+  let basePingTimeout = null;
+  let baseKeepAliveInterval = null;
+
+  wsProviderBase.websocket.on("open", () => {
+    baseKeepAliveInterval = setInterval(() => {
+      console.debug(
+        `>>> [BASE] Checking if the connection is alive, sending a ping.`
+      );
+
+      wsProviderBase.websocket.ping();
+
+      basePingTimeout = setTimeout(() => {
+        wsProviderBase.websocket.terminate();
+
+        // pm2 will restart the process
+        process.exit(1);
+      }, SOCKET_EXPECTED_PONG_BACK);
+    }, SOCKET_KEEP_ALIVE_CHECK_INTERVAL);
+  });
+
+  wsProviderBase.websocket.on("close", () => {
+    console.error(
+      `> [BASE] The websocket connection was closed, reconnecting...`
+    );
+    clearInterval(baseKeepAliveInterval);
+    clearTimeout(basePingTimeout);
+  });
+
+  wsProviderBase.websocket.on("pong", () => {
+    console.debug(
+      `> [BASE] Received pong, so connection is alive, clearing the timeout.`
+    );
+    clearInterval(basePingTimeout);
+  });
 }
 
 async function processEvent(chain, event) {
